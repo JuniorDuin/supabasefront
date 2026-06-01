@@ -1,80 +1,160 @@
-const productList = document.querySelector('#products');
+// URL do backend — atualize com o IP da VM AWS quando fizer o deploy
+const API_URL = 'http://localhost:3000';
+
 const addProductForm = document.querySelector('#add-product-form');
 const updateProductForm = document.querySelector('#update-product-form');
-const updateProductId = document.querySelector('#update-id');
-const updateProductName = document.querySelector('#update-name');
-const updateProductPrice = document.querySelector('#update-price');
 
-// Function to fetch all products from the server
+// Buscar todos os produtos
 async function fetchProducts() {
-  const response = await fetch('http://localhost:3000/products');
-  const products = await response.json();
+  const container = document.querySelector('#products-container');
+  container.innerHTML = '<p class="loading">Carregando...</p>';
 
-  // Clear product list
-  productList.innerHTML = '';
+  try {
+    const response = await fetch(`${API_URL}/products`);
+    const products = await response.json();
 
-  // Add each product to the list
-  products.forEach(product => {
-    const li = document.createElement('li');
-    li.innerHTML = `${product.name} - $${product.price}`;
+    if (!products || products.length === 0) {
+      container.innerHTML = '<p class="empty">Nenhum produto cadastrado.</p>';
+      return;
+    }
 
-    // Add delete button for each product
-    const deleteButton = document.createElement('button');
-    deleteButton.innerHTML = 'Delete';
-    deleteButton.addEventListener('click', async () => {
-      await deleteProduct(product.id);
-      await fetchProducts();
+    container.innerHTML = '';
+    products.forEach(product => {
+      container.appendChild(createProductCard(product));
     });
-    li.appendChild(deleteButton);
-
-    // Add update button for each product
-    const updateButton = document.createElement('button');
-    updateButton.innerHTML = 'Update';
-    updateButton.addEventListener('click', () => {
-      updateProductId.value = product.id;
-      updateProductName.value = product.name;
-      updateProductPrice.value = product.price;
-    });
-    li.appendChild(updateButton);
-
-    productList.appendChild(li);
-  });
+  } catch (err) {
+    container.innerHTML = `<p class="error">Erro ao conectar com o servidor: ${err.message}</p>`;
+  }
 }
 
+// Criar card de produto
+function createProductCard(product) {
+  const card = document.createElement('div');
+  card.className = 'product-card';
+  card.innerHTML = `
+    <div class="product-info">
+      <span class="product-id">ID: ${product.id}</span>
+      <h3 class="product-name">${product.name}</h3>
+      <p class="product-description">${product.description || '<em>Sem descrição</em>'}</p>
+      <span class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</span>
+    </div>
+    <div class="product-actions">
+      <button class="btn btn-warning btn-sm"
+        onclick="fillUpdateForm(${product.id}, \`${escStr(product.name)}\`, \`${escStr(product.description || '')}\`, ${product.price})">
+        &#9998; Editar
+      </button>
+      <button class="btn btn-danger btn-sm"
+        onclick="confirmDelete(${product.id}, \`${escStr(product.name)}\`)">
+        &#128465; Excluir
+      </button>
+    </div>
+  `;
+  return card;
+}
 
-// Event listener for Add Product form submit button
+function escStr(str) {
+  return String(str).replace(/`/g, '\\`').replace(/\$/g, '\\$');
+}
+
+// Preencher formulário de update com dados do produto
+function fillUpdateForm(id, name, description, price) {
+  document.querySelector('#update-id').value = id;
+  document.querySelector('#update-name').value = name;
+  document.querySelector('#update-description').value = description;
+  document.querySelector('#update-price').value = price;
+  document.querySelector('.update-header').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Buscar produto por ID
+async function searchById() {
+  const id = document.querySelector('#search-id').value;
+  const resultDiv = document.querySelector('#search-result');
+
+  if (!id || id < 1) {
+    resultDiv.innerHTML = '<p class="error">Digite um ID válido.</p>';
+    return;
+  }
+
+  resultDiv.innerHTML = '<p class="loading">Buscando...</p>';
+
+  try {
+    const response = await fetch(`${API_URL}/products/${id}`);
+    const data = await response.json();
+
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      resultDiv.innerHTML = '<p class="empty">Produto não encontrado.</p>';
+      return;
+    }
+
+    const product = Array.isArray(data) ? data[0] : data;
+    resultDiv.innerHTML = `
+      <div class="product-card search-found">
+        <div class="product-info">
+          <span class="product-id">ID: ${product.id}</span>
+          <h3 class="product-name">${product.name}</h3>
+          <p class="product-description">${product.description || '<em>Sem descrição</em>'}</p>
+          <span class="product-price">R$ ${parseFloat(product.price).toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    resultDiv.innerHTML = `<p class="error">Erro ao buscar produto: ${err.message}</p>`;
+  }
+}
+
+// Adicionar produto
 addProductForm.addEventListener('submit', async event => {
   event.preventDefault();
   const name = addProductForm.elements['name'].value;
+  const description = addProductForm.elements['description'].value;
   const price = addProductForm.elements['price'].value;
-  await addProduct(name, price);
-  addProductForm.reset();
-  await fetchProducts();
+
+  try {
+    await fetch(`${API_URL}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, price })
+    });
+    addProductForm.reset();
+    await fetchProducts();
+  } catch (err) {
+    alert(`Erro ao adicionar produto: ${err.message}`);
+  }
 });
 
-// Function to add a new product
-async function addProduct(name, price) {
-  const response = await fetch('http://localhost:3000/products', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ name, price })
-  });
-  return response.json();
-}
+// Atualizar produto
+updateProductForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const id = document.querySelector('#update-id').value;
+  const name = document.querySelector('#update-name').value;
+  const description = document.querySelector('#update-description').value;
+  const price = document.querySelector('#update-price').value;
 
-// Function to delete a new product
-async function deleteProduct(id) {
-  const response = await fetch('http://localhost:3000/products/' + id, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    //body: JSON.stringify({id})
-  });
-  return response.json();
-}
+  try {
+    await fetch(`${API_URL}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, price })
+    });
+    updateProductForm.reset();
+    await fetchProducts();
+    alert('Produto atualizado com sucesso!');
+  } catch (err) {
+    alert(`Erro ao atualizar produto: ${err.message}`);
+  }
+});
 
-// Fetch all products on page load
-fetchProducts();
+// Deletar produto com confirmação
+async function confirmDelete(id, name) {
+  if (!confirm(`Deseja excluir o produto "${name}"?`)) return;
+
+  try {
+    await fetch(`${API_URL}/products/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    await fetchProducts();
+  } catch (err) {
+    alert(`Erro ao excluir produto: ${err.message}`);
+  }
+}

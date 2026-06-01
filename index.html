@@ -1,26 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Product CRUD</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciador de Produtos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-  <h1>Product CRUD</h1>
 
-  <form id="add-product-form">
-    <h2>Add Product</h2>
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required>
-    <label for="price">Price:</label>
-    <input type="number" id="price" name="price" required step="0.01">
-    <button type="submit">Add</button>
-  </form>
+  <header>
+    <h1>GERENCIADOR DE PRODUTOS</h1>
+    <p class="subtitle">Sistema de CRUD — Cloud Computing</p>
+  </header>
 
-  <ul id="products"></ul>
+  <main>
+
+    <!-- Adicionar Produto -->
+    <section class="card">
+      <div class="card-header add-header">
+        <span class="card-icon">+</span>
+        <h2>Adicionar Produto</h2>
+      </div>
+      <form id="add-product-form">
+        <div class="form-group">
+          <label for="name">Nome</label>
+          <input type="text" id="name" name="name" placeholder="Nome do produto" required>
+        </div>
+        <div class="form-group">
+          <label for="description">Descrição</label>
+          <textarea id="description" name="description" placeholder="Descrição do produto" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="price">Preço (R$)</label>
+          <input type="number" id="price" name="price" placeholder="0.00" required step="0.01" min="0">
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar Produto</button>
+      </form>
+    </section>
+
+    <!-- Buscar por ID -->
+    <section class="card">
+      <div class="card-header search-header">
+        <span class="card-icon">&#128269;</span>
+        <h2>Buscar por ID</h2>
+      </div>
+      <div class="search-row">
+        <input type="number" id="search-id" placeholder="Digite o ID do produto" min="1">
+        <button onclick="searchById()" class="btn btn-secondary">Buscar</button>
+      </div>
+      <div id="search-result"></div>
+    </section>
+
+    <!-- Atualizar Produto -->
+    <section class="card">
+      <div class="card-header update-header">
+        <span class="card-icon">&#9998;</span>
+        <h2>Atualizar Produto</h2>
+      </div>
+      <p class="hint">Clique em "Editar" em um produto da lista para preencher automaticamente.</p>
+      <form id="update-product-form">
+        <div class="form-group">
+          <label for="update-id">ID do Produto</label>
+          <input type="number" id="update-id" name="update-id" placeholder="ID do produto" required>
+        </div>
+        <div class="form-group">
+          <label for="update-name">Nome</label>
+          <input type="text" id="update-name" name="update-name" placeholder="Novo nome" required>
+        </div>
+        <div class="form-group">
+          <label for="update-description">Descrição</label>
+          <textarea id="update-description" name="update-description" placeholder="Nova descrição" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="update-price">Preço (R$)</label>
+          <input type="number" id="update-price" name="update-price" placeholder="0.00" required step="0.01" min="0">
+        </div>
+        <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+      </form>
+    </section>
+
+    <!-- Lista de Produtos -->
+    <section class="card">
+      <div class="card-header list-header">
+        <span class="card-icon">&#128230;</span>
+        <h2>Lista de Produtos</h2>
+      </div>
+      <button onclick="fetchProducts()" class="btn btn-secondary refresh-btn">&#8635; Atualizar Lista</button>
+      <div id="products-container">
+        <p class="loading">Carregando produtos...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Disciplina de Desenvolvimento de Software em Nuvem &mdash; Prof. Américo Sampaio</p>
+  </footer>
 
   <script src="app.js"></script>
   <script>
-    // Call fetchProducts() when the page loads
     window.addEventListener('load', fetchProducts);
   </script>
 </body>
