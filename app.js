@@ -1,5 +1,5 @@
 // URL do backend — atualize com o IP da VM AWS quando fizer o deploy
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://54.226.110.69:3000';
 
 const addProductForm = document.querySelector('#add-product-form');
 const updateProductForm = document.querySelector('#update-product-form');
